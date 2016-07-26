@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FirebaseChat</string>
+    <string name="api_key_google_places">AIzaSyABnyn_eUHfze_ZVYoTme-q2wap5HFPmpQ</string>
+</resources>
