@@ -1,24 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-
+<!--
+ android:id
+        type[view, button, edit,layout] _ purpose [ method ]
+-->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:emojicon="http://schemas.android.com/tools"
     android:paddingBottom="5dp"
     android:paddingLeft="16dp"
     android:paddingRight="16dp">
 
     <ImageView
-        android:id="@+id/ivUserChat"
+        android:id="@+id/imageview_user"
         android:layout_width="35dp"
         android:layout_height="35dp"
-        android:layout_alignBottom="@+id/contentMessageChat"
+        android:layout_alignBottom="@+id/view_chatmessage"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"/>
 
     <me.himanshusoni.chatmessageview.ChatMessageView
-        android:id="@+id/contentMessageChat"
+        android:id="@+id/view_chatmessage"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cmv_backgroundColor="@color/colorAccent"
@@ -29,11 +31,11 @@
         app:cmv_cornerRadius="3dp"
         app:cmv_showArrow="true"
         android:layout_alignParentTop="true"
-        android:layout_toStartOf="@+id/ivUserChat"
-        android:layout_toLeftOf="@+id/ivUserChat">
+        android:layout_toStartOf="@+id/imageview_user"
+        android:layout_toLeftOf="@+id/imageview_user">
 
     <ImageView
-        android:id="@+id/img_chat"
+        android:id="@+id/imageview_chat_photo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="#000"
@@ -43,25 +45,25 @@
         android:maxHeight="150dp"/>
 
     <TextView
-        android:id="@+id/tvLocation"
+        android:id="@+id/textview_location"
         android:visibility="gone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:layout_below="@+id/img_chat"
+        android:layout_below="@+id/imageview_chat_photo"
         android:textSize="10sp"
         android:text="Location"
         android:textStyle="bold"/>
 
     </me.himanshusoni.chatmessageview.ChatMessageView>
     <TextView
-        android:id="@+id/timestamp"
+        android:id="@+id/textview_timestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="22/06/2016"
         android:layout_marginBottom="25dp"
         android:padding="10dp"
         android:textSize="10sp"
-        android:layout_below="@id/contentMessageChat"
-        android:layout_alignRight="@id/contentMessageChat"/>
+        android:layout_below="@id/view_chatmessage"
+        android:layout_alignRight="@id/view_chatmessage"/>
 </RelativeLayout>

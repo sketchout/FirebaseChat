@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+ android:id
+        type[view, button, edit,layout] _ purpose [ method ]
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:emojicon="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/contentRoot"
+    android:id="@+id/linearlayout_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -15,7 +19,7 @@
         android:layout_weight="1">
 
         <android.support.v7.widget.RecyclerView
-            android:id="@+id/messageRecyclerView"
+            android:id="@+id/recyclerview_main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:scrollbars="none"/>
@@ -27,6 +31,7 @@
 
     </FrameLayout>
 
+    <!-- Input Message -->
     <RelativeLayout
         android:background="#fff"
         android:layout_width="match_parent"
@@ -34,31 +39,31 @@
         android:padding="2dp">
 
         <ImageView
-            android:id="@+id/buttonEmoji"
+            android:id="@+id/imageview_emoji_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:padding="4dp"
             android:src="@drawable/smiley"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
-            android:layout_alignBottom="@+id/editTextMessage"/>
+            android:layout_alignBottom="@+id/edittext_emo"/>
 
         <hani.momanii.supernova_emoji_library.Helper.EmojiconEditText
-            android:id="@+id/editTextMessage"
+            android:id="@+id/edittext_emo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_toStartOf="@+id/buttonMessage"
-            android:layout_toRightOf="@+id/buttonEmoji"
-            android:layout_toEndOf="@+id/buttonEmoji"
-            emojicon:emojiconSize="28sp"
-            />
+            android:layout_toStartOf="@+id/imageview_message_send"
+            android:layout_toRightOf="@+id/imageview_emoji_button"
+            android:layout_toEndOf="@+id/imageview_emoji_button"
+            emojicon:emojiconSize="28sp" />
+
         <ImageView
-            android:id="@+id/buttonMessage"
+            android:id="@+id/imageview_message_send"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:padding="4dp"
             android:src="@android:drawable/ic_menu_send"
-            android:layout_alignBottom="@+id/editTextMessage"
+            android:layout_alignBottom="@+id/edittext_emo"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"/>
 

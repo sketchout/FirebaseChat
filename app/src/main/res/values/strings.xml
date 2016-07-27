@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">FirebaseChat</string>
     <string name="api_key_google_places">AIzaSyABnyn_eUHfze_ZVYoTme-q2wap5HFPmpQ</string>
+    <string name="sendPhoto">sendPhoto</string>
+    <string name="sendPhotoGallery">sendPhotoGallery</string>
+    <string name="sendLocation">sendLocation</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="select_picture_title">Select</string>
 </resources>

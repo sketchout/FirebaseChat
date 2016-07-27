@@ -2,6 +2,7 @@ package project.mycloud.com.firebasechat.adapter;
 
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +12,6 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.Query;
 
 import hani.momanii.supernova_emoji_library.Helper.EmojiconTextView;
 import project.mycloud.com.firebasechat.R;
@@ -28,6 +28,8 @@ public class ChatFirebaseAdapter
     private static final int LEFT_MSG = 1;
     private static final int RIGHT_MSG_IMG = 2;
     private static final int LEFT_MSG_IMG = 3;
+
+    private static final String TAG = ChatFirebaseAdapter.class.getSimpleName();
 
     private ClickListenerChatFirebase mClickListenerChatFirebase;
     private String nameUser;
@@ -106,22 +108,31 @@ public class ChatFirebaseAdapter
                                       ChatModel model, int position) {
 
         // photo -> imageview user
+        Log.d(TAG,"populateViewHolder: getPhoto_profile() : " + model.getUserModel().getPhoto_profile() );
         viewHolder.setIvUser( model.getUserModel().getPhoto_profile() );
+
+        Log.d(TAG,"populateViewHolder: model.getMessage() : " + model.getMessage() );
         viewHolder.setTxtMessage( model.getMessage() );
 
+        Log.d(TAG,"populateViewHolder: model.getTimeStamp() : " + model.getTimeStamp() );
         viewHolder.setTvTimestamp( model.getTimeStamp() );
 
         viewHolder.tvIsLocation( View.GONE );
 
         if ( model.getFile() != null ) {
+
+            Log.d(TAG,"populateViewHolder: model.setIvChatPhoto() file : " + model.getFile().getUrl_file() );
+
             viewHolder.tvIsLocation(View.GONE );
             viewHolder.setIvChatPhoto( model.getFile().getUrl_file() );
 
         } else if ( model.getMapModel() != null ) {
+
+            Log.d(TAG,"populateViewHolder: model.setIvChatPhoto() : Lat(" + model.getMapModel().getLatitude()
+                        +") Long("+  model.getMapModel().getLongitude() +")" );
+
             viewHolder.setIvChatPhoto(
-                    Util.local(model.getMapModel().getLatitude(),
-                            model.getMapModel().getLongitude() )
-            );
+                    Util.local(model.getMapModel().getLatitude(),model.getMapModel().getLongitude() )  );
             viewHolder.tvIsLocation( View.VISIBLE );
         }
     }
@@ -139,12 +150,14 @@ public class ChatFirebaseAdapter
         public MyChatViewHolder(View itemView) {
 
             super(itemView);
+            tvTimestamp =(TextView)itemView.findViewById(R.id.textview_timestamp);
+            txtMessage = (EmojiconTextView)itemView.findViewById(R.id.textview_emo);
+            tvLocation = (TextView)itemView.findViewById(R.id.textview_location);
+            ivChatPhoto = (ImageView)itemView.findViewById(R.id.imageview_chat_photo);
+            ivUser =(ImageView)itemView.findViewById(R.id.imageview_user);
 
-            tvTimestamp =(TextView)itemView.findViewById(R.id.timestamp);
-            txtMessage = (EmojiconTextView)itemView.findViewById(R.id.editTextMessage);
-            tvLocation = (TextView)itemView.findViewById(R.id.tvLocation);
-            ivChatPhoto = (ImageView)itemView.findViewById(R.id.img_chat);
-            ivUser =(ImageView)itemView.findViewById(R.id.ivUserChat);
+            //Glide.with(ivUser.getContext()).load("http://goo.gl/gEgYUd").into(ivUser);
+            //Glide.with(ivChatPhoto.getContext()).load("http://goo.gl/gEgYUd").into(ivChatPhoto);
         }
 
         //    public TextView getTvTimestamp() {
@@ -154,16 +167,15 @@ public class ChatFirebaseAdapter
         public void setTvTimestamp(String timestamp) {
             if ( tvTimestamp == null ) return;
             //this.tvTimestamp = tvTimestamp;
-            this.tvTimestamp.setText(convertTimestamp(timestamp));
+            tvTimestamp.setText(convertTimestamp(timestamp));
         }
 
         private CharSequence convertTimestamp(String timestamp) {
             //return 0;
-            return DateUtils.getRelativeTimeSpanString(
+            return DateUtils.getRelativeTimeSpanString (
                     Long.parseLong(timestamp),
                     System.currentTimeMillis(),
-                    DateUtils.SECOND_IN_MILLIS
-            ) ;
+                    DateUtils.SECOND_IN_MILLIS   ) ;
         }
 
 //    public EmojiconTextView getTxtMessage() {
@@ -172,9 +184,8 @@ public class ChatFirebaseAdapter
 
         public void setTxtMessage(String message) {
 
-            if ( message == null ) return;
-
-            this.txtMessage.setText( message );
+            if ( message.isEmpty() ) return;
+            txtMessage.setText( message );
         }
 
 //    public TextView getTvLocation() {
@@ -195,13 +206,19 @@ public class ChatFirebaseAdapter
 //    }
 
         public void setIvChatPhoto(String url) {
+
+            Log.d(TAG,"setIvChatPhoto " + url );
             if ( url == null ) return;
 
-            //this.ivChatPhoto = ivChatPhoto;
-            Glide.with( this.ivChatPhoto.getContext())
-                    .load(url).override(100,100)
+            //Glide.with(ivUser.getContext()).load("http://goo.gl/gEgYUd").into(ivUser);
+            Glide.with( ivChatPhoto.getContext())
+                    .load(url)
+                    .asBitmap()
                     .fitCenter()
+                    //.placeholder(android.R.drawable.progress_horizontal)
+                    .override(100,100)
                     .into(ivChatPhoto);
+
             ivChatPhoto.setOnClickListener(this);
         }
 
@@ -210,16 +227,32 @@ public class ChatFirebaseAdapter
 //    }
 
         public void setIvUser(String urlPhotoUser) {
+
+            Log.d(TAG,"setIvUser " + urlPhotoUser );
             if( urlPhotoUser == null ) return;
 
+            //Glide.with(this.ivChatPhoto.getContext()).load("http://goo.gl/gEgYUd").into(ivChatPhoto);
             Glide.with( ivUser.getContext() )
-                    .load(urlPhotoUser).centerCrop()
-                    .transform(new CircleTransform( ivUser.getContext() ))
-                    .override(40,40).into(ivUser) ;
+                    .load( urlPhotoUser )
+                    .asBitmap() // Attempts to always load the resource as a {@link android.graphics.Bitmap}
+                    .centerCrop()
+                    .transform( new CircleTransform( ivUser.getContext() ) )
+                    //.placeholder(android.R.drawable.progress_horizontal)
+                    .override(40,40)
+                    .into(ivUser) ;
+
+            // .load()
+            // A helper method equivalent to calling {@link #asDrawable()} and then
+            // {@link RequestBuilder#load(Object)} with the given model.
+            //
+            // .asBitmap()
+            // Attempts to always load the resource as a {@link android.graphics.Bitmap},
+            // even if it could actually be animated.
         }
 
         @Override
         public void onClick(View view) {
+
             int position = getAdapterPosition();
             ChatModel model = getItem( position );
 

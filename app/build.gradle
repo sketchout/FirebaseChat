@@ -34,7 +34,9 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.1.0'
     compile 'com.android.support:recyclerview-v7:24.1.0'
     compile 'com.android.support:design:24.1.0'
+
     compile 'com.github.bumptech.glide:glide:3.7.0'
+
     compile 'hani.momanii.supernova_emoji_library:supernova-emoji-library:0.0.2'
     compile 'me.himanshusoni.chatmessageview:chat-message-view:1.0.3'
 

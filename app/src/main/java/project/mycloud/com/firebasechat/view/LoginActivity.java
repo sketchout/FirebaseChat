@@ -2,7 +2,6 @@ package project.mycloud.com.firebasechat.view;
 
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.design.widget.TabLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -50,7 +49,7 @@ public class LoginActivity extends AppCompatActivity
             finish();
         }
         
-        mSignInButton =(SignInButton)findViewById(R.id.sign_in_button);
+        mSignInButton =(SignInButton)findViewById(R.id.button_sign_in);
         mSignInButton.setOnClickListener(this);
 
         GoogleSignInOptions gso =
@@ -120,7 +119,7 @@ public class LoginActivity extends AppCompatActivity
     public void onClick(View view) {
         
         switch( view.getId() ) {
-            case R.id.sign_in_button:
+            case R.id.button_sign_in:
                 signIn();
                 break;
             default:
