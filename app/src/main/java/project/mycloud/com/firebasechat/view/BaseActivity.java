@@ -1,7 +1,9 @@
-package project.mycloud.com.firebasechat;
+package project.mycloud.com.firebasechat.view;
 
 import android.app.ProgressDialog;
 import android.support.v7.app.AppCompatActivity;
+
+import project.mycloud.com.firebasechat.R;
 
 /**
  * Created by admin on 2016-07-27.
@@ -30,8 +32,8 @@ public class BaseActivity extends AppCompatActivity {
         if (mProgressDialog == null) {
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setCancelable(false);
-            mProgressDialog.setMessage(message);
         }
+        mProgressDialog.setMessage(message);
         mProgressDialog.show();
     }
 

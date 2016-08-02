@@ -11,6 +11,7 @@
     android:paddingLeft="16dp"
     android:paddingRight="16dp">
 
+    <!-- model.getUserModel().getPhoto_profile() -->
     <ImageView
         android:id="@+id/imageview_user"
         android:layout_width="35dp"

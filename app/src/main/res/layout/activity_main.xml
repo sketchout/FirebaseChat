@@ -39,13 +39,24 @@
         android:padding="2dp">
 
         <ImageView
+            android:id="@+id/imageview_attach"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_add_black_24dp"
+            android:tint="@android:color/darker_gray"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignBottom="@+id/imageview_emoji_button"/>
+
+        <ImageView
             android:id="@+id/imageview_emoji_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:padding="4dp"
             android:src="@drawable/smiley"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
+            android:layout_toRightOf="@+id/imageview_attach"
+            android:layout_toEndOf="@+id/imageview_attach"
             android:layout_alignBottom="@+id/edittext_emo"/>
 
         <hani.momanii.supernova_emoji_library.Helper.EmojiconEditText

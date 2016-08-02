@@ -5,7 +5,7 @@ import android.view.View;
 /**
  * Created by admin on 2016-07-25.
  */
-public interface ClickListenerChatFirebase {
+public interface IClickListenerChatFirebase {
 
     /**
      * click on image

@@ -7,7 +7,7 @@ import android.widget.Toast;
 /**
  * Created by admin on 2016-07-25.
  */
-public class Util {
+public class Utils {
 
     public static final String URL_STORAGE_REFERENCE =
             "gs://fir-chat-b753c.appspot.com";

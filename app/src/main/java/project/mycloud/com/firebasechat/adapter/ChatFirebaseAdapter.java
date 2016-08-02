@@ -16,7 +16,7 @@ import com.google.firebase.database.DatabaseReference;
 import hani.momanii.supernova_emoji_library.Helper.EmojiconTextView;
 import project.mycloud.com.firebasechat.R;
 import project.mycloud.com.firebasechat.model.ChatModel;
-import project.mycloud.com.firebasechat.util.Util;
+import project.mycloud.com.firebasechat.util.Utils;
 
 /**
  * Created by admin on 2016-07-25.
@@ -31,11 +31,11 @@ public class ChatFirebaseAdapter
 
     private static final String TAG = ChatFirebaseAdapter.class.getSimpleName();
 
-    private ClickListenerChatFirebase mClickListenerChatFirebase;
+    private IClickListenerChatFirebase mIClickListenerChatFirebase;
     private String nameUser;
 
     public ChatFirebaseAdapter(DatabaseReference ref, String nameUser,
-                               ClickListenerChatFirebase mClickListerChatFirebase) {
+                               IClickListenerChatFirebase mClickListerChatFirebase) {
         super(ChatModel.class,
                 R.layout.item_message_left,
                 MyChatViewHolder.class,
@@ -43,7 +43,7 @@ public class ChatFirebaseAdapter
 
         this.nameUser = nameUser;
 
-        this.mClickListenerChatFirebase = mClickListerChatFirebase;
+        this.mIClickListenerChatFirebase = mClickListerChatFirebase;
 
     }
 
@@ -132,7 +132,7 @@ public class ChatFirebaseAdapter
                         +") Long("+  model.getMapModel().getLongitude() +")" );
 
             viewHolder.setIvChatPhoto(
-                    Util.local(model.getMapModel().getLatitude(),model.getMapModel().getLongitude() )  );
+                    Utils.local(model.getMapModel().getLatitude(),model.getMapModel().getLongitude() )  );
             viewHolder.tvIsLocation( View.VISIBLE );
         }
     }
@@ -154,6 +154,8 @@ public class ChatFirebaseAdapter
             txtMessage = (EmojiconTextView)itemView.findViewById(R.id.textview_emo);
             tvLocation = (TextView)itemView.findViewById(R.id.textview_location);
             ivChatPhoto = (ImageView)itemView.findViewById(R.id.imageview_chat_photo);
+
+            // model.getUserModel().getPhoto_profile()
             ivUser =(ImageView)itemView.findViewById(R.id.imageview_user);
 
             //Glide.with(ivUser.getContext()).load("http://goo.gl/gEgYUd").into(ivUser);
@@ -184,7 +186,7 @@ public class ChatFirebaseAdapter
 
         public void setTxtMessage(String message) {
 
-            if ( message.isEmpty() ) return;
+            if ( message == null  || message.isEmpty() ) return;
             txtMessage.setText( message );
         }
 
@@ -257,12 +259,12 @@ public class ChatFirebaseAdapter
             ChatModel model = getItem( position );
 
             if ( model.getMapModel() != null ) {
-                mClickListenerChatFirebase.clickImageMapChat(
+                mIClickListenerChatFirebase.clickImageMapChat(
                         view, position,
                         model.getMapModel().getLatitude(),
                         model.getMapModel().getLongitude() );
             } else {
-                mClickListenerChatFirebase.clickImageChat(
+                mIClickListenerChatFirebase.clickImageChat(
                         view, position,
                         model.getUserModel().getName(),
                         model.getUserModel().getPhoto_profile(),
