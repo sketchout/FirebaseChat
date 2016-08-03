@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#424242"
+    tools:context="project.mycloud.com.firebasechat.view.FullScreenImageActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar_fullscreen"
+        android:layout_width="match_parent"
+        android:layout_height="?android:attr/actionBarSize"
+        style="@style/FullScreen.TextApperance.Title"
+        android:background="@color/colorPrimary"
+        android:elevation="@dimen/elevation_header"
+        tools:ignore="UnusedAttribute">
+
+        <ImageView
+            android:id="@+id/imageview_avatar_fullscreen"
+            android:layout_height="@dimen/size_avatar_toolbar"
+            android:layout_width="@dimen/size_avatar_toolbar"
+            android:layout_marginEnd="@dimen/spacing_double"
+            android:layout_marginRight="@dimen/spacing_double"
+            tools:ingnore="UnusedAttribute"/>
+
+        <TextView
+            android:id="@+id/text_title_fullscreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="PrivateResource"
+            style="@style/FullScreen.TextApperance.Title.Inverse"
+            android:layout_gravity="center_vertical|start"/>
+
+    </android.support.v7.widget.Toolbar>
+
+    <project.mycloud.com.firebasechat.view.TouchImageView
+        android:id="@+id/imageview_touch"
+        android:layout_below="@+id/toolbar_fullscreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"/>
+
+</RelativeLayout>
