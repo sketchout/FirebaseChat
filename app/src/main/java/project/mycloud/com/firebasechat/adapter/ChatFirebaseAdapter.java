@@ -16,7 +16,7 @@ import com.google.firebase.database.DatabaseReference;
 import hani.momanii.supernova_emoji_library.Helper.EmojiconTextView;
 import project.mycloud.com.firebasechat.R;
 import project.mycloud.com.firebasechat.model.ChatModel;
-import project.mycloud.com.firebasechat.util.Utils;
+import project.mycloud.com.firebasechat.util.CommonUtil;
 
 /**
  * Created by admin on 2016-07-25.
@@ -132,7 +132,7 @@ public class ChatFirebaseAdapter
                         +") Long("+  model.getMapModel().getLongitude() +")" );
 
             viewHolder.setIvChatPhoto(
-                    Utils.local(model.getMapModel().getLatitude(),model.getMapModel().getLongitude() )  );
+                    CommonUtil.local(model.getMapModel().getLatitude(),model.getMapModel().getLongitude() )  );
             viewHolder.tvIsLocation( View.VISIBLE );
         }
     }

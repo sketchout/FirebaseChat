@@ -5,5 +5,5 @@
     <string name="sendPhotoGallery">PhotoGallery</string>
     <string name="sendLocation">Location</string>
     <string name="sign_out">SignOut</string>
-    <string name="select_picture_title">Select</string>
+    <string name="select_picture_title">Select picture</string>
 </resources>

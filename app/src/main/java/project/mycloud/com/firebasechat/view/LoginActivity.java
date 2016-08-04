@@ -23,7 +23,7 @@ import com.google.firebase.auth.GoogleAuthProvider;
 
 import project.mycloud.com.firebasechat.MainActivity;
 import project.mycloud.com.firebasechat.R;
-import project.mycloud.com.firebasechat.util.Utils;
+import project.mycloud.com.firebasechat.util.CommonUtil;
 
 public class LoginActivity extends AppCompatActivity
         implements View.OnClickListener,
@@ -44,8 +44,8 @@ public class LoginActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        if( !Utils.verifyConnection(this) ) {
-            Utils.initToast(this,"Please try again later !");
+        if( !CommonUtil.verifyConnection(this) ) {
+            CommonUtil.initToast(this,"Please try again later !");
             finish();
         }
         
@@ -104,7 +104,7 @@ public class LoginActivity extends AppCompatActivity
 
                         if ( !task.isSuccessful() ) {
                             Log.w(TAG, "signInWithCredential", task.getException() );
-                            Utils.initToast( LoginActivity.this, "Authentication failed");
+                            CommonUtil.initToast( LoginActivity.this, "Authentication failed");
                         } else {
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             finish();
@@ -139,6 +139,6 @@ public class LoginActivity extends AppCompatActivity
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "onConnectionFailed :" + connectionResult );
-        Utils.initToast( this, "Google Play Service error. Please try again later");
+        CommonUtil.initToast( this, "Google Play Service error. Please try again later");
     }
 }

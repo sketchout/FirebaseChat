@@ -1,21 +1,20 @@
 package project.mycloud.com.firebasechat;
 
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.PersistableBundle;
 import android.provider.MediaStore;
-import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
-import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,6 +42,7 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -55,10 +55,12 @@ import project.mycloud.com.firebasechat.model.ChatModel;
 import project.mycloud.com.firebasechat.model.FileModel;
 import project.mycloud.com.firebasechat.model.MapModel;
 import project.mycloud.com.firebasechat.model.UserModel;
-import project.mycloud.com.firebasechat.util.Utils;
+import project.mycloud.com.firebasechat.util.CommonUtil;
 import project.mycloud.com.firebasechat.view.BaseActivity;
 import project.mycloud.com.firebasechat.view.FullScreenImageActivity;
 import project.mycloud.com.firebasechat.view.LoginActivity;
+
+import static project.mycloud.com.firebasechat.util.CommonUtil.calculateInSampleSize;
 
 //
 // date : 25 July 2016
@@ -90,10 +92,12 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
     //
     private DatabaseReference mFirebaseDatabaseReference;
     FirebaseStorage storage = FirebaseStorage.getInstance();
-    private File filePathImageCamera;
+    private File filePathImageCamera = null;
 
     // google api
     private GoogleApiClient mGoogleApiClient;
+    //private Uri cameraImageUri;
+
     //
     // https://android-arsenal.com/details/3/3812#description
     //
@@ -102,16 +106,15 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d(TAG,"Environment.DIRECTORY_PICTURES : "
-                + Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_PICTURES ) );
-        Log.d(TAG,"Environment.DIRECTORY_DCIM : "
-                + Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_DCIM )  );
+        if ( savedInstanceState != null ) {
+            filePathImageCamera = new File ( savedInstanceState.getString("camera_filePath") );
+        }
 
-        if ( !Utils.verifyConnection(this)) {
-            Utils.initToast(this, "Please Check Internet Status!");
+        if ( !CommonUtil.verifyConnection(this)) {
+            CommonUtil.initToast(this, "Please Check Internet Status!");
             finish();
         } else {
-            //Utils.initToast(this, "findViews()!");
+            //CommonUtil.initToast(this, "findViews()!");
             findViews();
             getFirebaseAuth();
 
@@ -119,6 +122,18 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                         .addApi(Auth.GOOGLE_SIGN_IN_API).build();
         }
     }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+
+        // http://stackoverflow.com/questions/32339418/android-getting-uri-from-camera
+        if ( filePathImageCamera != null ) {
+            savedInstanceState.putString("camera_filePath",
+                    filePathImageCamera.toString());
+        }
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
     @Override
     public void onClick(View view) {
         switch( view.getId() ) {
@@ -143,67 +158,56 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         return super.onOptionsItemSelected(item);
     }
 
+    public void getInfoAndUpload(Uri selectedImageUri) {
+        StorageReference firebaseStRef
+                = storage.getReferenceFromUrl(CommonUtil.URL_STORAGE_REFERENCE)
+                .child(CommonUtil.FOLDER_STORAGE_IMG);
+
+        showProgrssDialogMessage("Uploading...");
+        final String name = DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString();
+        StorageReference firebaseStRefChild = firebaseStRef.child(name+"_gallery");
+        upGalleryImage( firebaseStRefChild, selectedImageUri , name );
+
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent returnIntent) {
 
-        // Utils.URL_STORAGE_REFERENCE : "gs://fir-chat-b753c.appspot.com";
-        // Utils.FOLDER_STORAGE_IMG : "images"
+        // CommonUtil.URL_STORAGE_REFERENCE : "gs://fir-chat-b753c.appspot.com";
+        // CommonUtil.FOLDER_STORAGE_IMG : "images"
 
         StorageReference firebaseStRef
-                = storage.getReferenceFromUrl(Utils.URL_STORAGE_REFERENCE)
-                        .child(Utils.FOLDER_STORAGE_IMG);
+                = storage.getReferenceFromUrl(CommonUtil.URL_STORAGE_REFERENCE)
+                        .child(CommonUtil.FOLDER_STORAGE_IMG);
+
+        // http://stackoverflow.com/questions/37557343/resize-an-image-before-uploading-it-to-firebase
 
         if ( requestCode == REQUEST_CAMERA_IMAGE) {
             if ( resultCode == RESULT_OK ) {
-                if ( filePathImageCamera != null && filePathImageCamera.exists() ) {
-                    showProgrssDialogMessage("Uploading...");
-                    StorageReference firebaseStRefChild =
-                            firebaseStRef.child( filePathImageCamera.getName()+"_camera" );
-                    upCameraImage( firebaseStRefChild, filePathImageCamera );
+
+                Log.e(TAG, "onActivityResult.filePathImageCamera  :" + filePathImageCamera );
+                if ( filePathImageCamera != null ) {
+                    // http://stackoverflow.com/questions/33030933/android-6-0-open-failed-eacces-permission-denied
+                    if ( filePathImageCamera.exists() ) {
+                        showProgrssDialogMessage("Uploading...");
+                        StorageReference firebaseStRefChild =
+                                firebaseStRef.child( filePathImageCamera.getName()+"_camera" );
+                        upCameraImage( firebaseStRefChild, filePathImageCamera );
+                    }
+                    else {
+                        Log.e(TAG, "onActivityResult.filePathImageCamera  :" + "Not Exist" );
+                    }
                 } else {
                     // IS NULL
-                    Log.e(TAG, "filePathImageCamera is null:" + filePathImageCamera );
                 }
             }
         }
         else if (requestCode == REQUEST_GALLERY_IMAGE ) {
             if ( resultCode == RESULT_OK ) {
-
-
                 Uri selectedImageUri = returnIntent.getData();
-/*
-                Log.i(TAG, "REQUEST_GALLERY_IMAGE selectedImageUri:"
-                        + selectedImageUri.toString() ); // content://media/external/images/media/11807
-                Log.i(TAG, "REQUEST_GALLERY_IMAGE getPath:"
-                        + selectedImageUri.getPath() ); // /external/images/media/11807
-
-                File file = new File( selectedImageUri.getPath() );
-                Log.i(TAG, "REQUEST_GALLERY_IMAGE file length:"
-                        + file.length() ); // 0
-*/
-
-                //https://developer.android.com/training/secure-file-sharing/retrieve-info.html#RetrieveFileInfo
-                 /*
-                * Get the file's content URI from the incoming Intent,
-                * then query the server app to get the file's display name
-                * and size.
-                */
-/*
-                Cursor returnCursor = getContentResolver().query(selectedImageUri,
-                                    null, null, null, null);
-                int sizeIndex = returnCursor.getColumnIndex(OpenableColumns.SIZE);
-                Log.i(TAG, "returnCursor sizeIndex:" + sizeIndex );
-
-                Bitmap image = (Bitmap) returnIntent.getExtras().get("data");
-                Log.i(TAG, "returnCursor image byteCount:" + image.getByteCount() );
-*/
-
                 if ( selectedImageUri != null ) {
 
-                    showProgrssDialogMessage("Uploading...");
-                    final String name = DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString();
-                    StorageReference firebaseStRefChild = firebaseStRef.child(name+"_gallery");
-                    upGalleryImage( firebaseStRefChild, selectedImageUri , name );
+                    getInfoAndUpload(selectedImageUri);
 
                 } else {
                     Log.e(TAG, "selectedImageUri is null:" + selectedImageUri );
@@ -237,23 +241,11 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
 
         if (firebaseStRefChild != null) {
 
-            UploadTask uploadTask;
+            // @@Tanmay Sahoo : get Byte from Image Uri
+            byte[] bytes = getBytesFromImageUri(uri);
+            UploadTask uploadTask = firebaseStRefChild.putBytes( bytes );
 
-            File f = new File( uri.getPath() );
-            long length = f.length() / 1024;
-
-            Log.i(TAG, "upGalleryImage File path : " + f.getPath() );
-            Log.i(TAG, "upGalleryImage length : " + length);
-
-
-
-            if ( length > 512 ) {
-                byte[] bytes = getShrinkImage(uri);
-                uploadTask = firebaseStRefChild.putBytes(bytes);
-            } else {
-                uploadTask = firebaseStRefChild.putFile(uri);
-            }
-
+            // uploadTask = firebaseStRefChild.putFile(uri);
             uploadTask.addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
@@ -280,20 +272,6 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         } else {
         }
     }
-
-    private byte[] getShrinkImage(Uri uri) {
-        // http://pmarshall.me/2016/02/20/image-storage-with-firebase.html
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize=8; //shrink it down as 1/inSampleSize the w/h of the original
-        Bitmap bitmap = BitmapFactory.decodeFile( uri.getPath() , options );
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress( Bitmap.CompressFormat.JPEG, 100, baos );
-        byte[] bytes = baos.toByteArray();
-        //String base64Image = Base64.encodeToString( bytes, Base64.DEFAULT );
-        Log.i(TAG, "getShrinkImage length : " + bytes.length);
-        return bytes;
-    }
-
     /**
      *
      * @param firebaseStRefChild
@@ -303,11 +281,12 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
 
         if ( firebaseStRefChild != null  ) {
 
-            long length = file.length() / 1024; // Size in KB
-            if ( length > 512 ) {
-            }
+            //UploadTask uploadTask = firebaseStRefChild.putFile( Uri.fromFile(file) );
 
-            UploadTask uploadTask = firebaseStRefChild.putFile( Uri.fromFile(file) );
+            // @@Tanmay Sahoo
+            byte[] bytes = getBytesFromImageUri(Uri.fromFile(file));
+            UploadTask uploadTask = firebaseStRefChild.putBytes( bytes );
+
             uploadTask.addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
@@ -335,6 +314,38 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
             });
         } else {
         }
+    }
+
+    // http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
+    // @@Tanmay Sahoo
+    //
+    private byte[] getBytesFromImageUri(Uri uri) {
+        // TODO : get size of image
+        // http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        Bitmap bitmap=null;
+        options.inJustDecodeBounds = true;
+        try {
+
+            BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, options);
+            options.inSampleSize = calculateInSampleSize(options,
+                    CommonUtil.MAX_IMAGE_WIDTH, CommonUtil.MAX_IMAGE_WIDTH );
+
+            options.inJustDecodeBounds = false;
+
+            bitmap = BitmapFactory.decodeStream( getContentResolver().openInputStream(uri),
+                    null, options );
+
+            Log.i(TAG, ">>>> image.getByteCount() : " + bitmap.getByteCount() );
+            Log.i(TAG, ">>>> image.getByteCount() K : " + bitmap.getByteCount() / 1024 );
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress( Bitmap.CompressFormat.JPEG, 100, baos );
+        return baos.toByteArray();
     }
 
     private void sendChatMessage(ChatModel chatModel) {
@@ -471,7 +482,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.d(TAG, "onConnectionFailed:" + connectionResult);
-        Utils.initToast( this, "Google Play Services error.");
+        CommonUtil.initToast( this, "Google Play Services error.");
     }
 
     private void pickerPlaceIntent() {
@@ -485,30 +496,31 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         }
     }
 
+    // http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
     private void galleryImageIntent() {
         Intent i = new Intent();
         i.setType("image/*");
         i.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(i,
-                    getString(R.string.select_picture_title)),
+        startActivityForResult(Intent.createChooser(i,getString(R.string.select_picture_title)),
                 REQUEST_GALLERY_IMAGE);
     }
 
     private void cameraImageIntent() {
-        String nameFoto = DateFormat.format("yyyyMMdd_hhmmss", new Date() ).toString();
 
+        String nameFoto = DateFormat.format("yyyyMMdd_hhmmss", new Date() ).toString();
         Log.d(TAG,"cameraImageIntent.nameFoto :" + nameFoto);
-        Log.d(TAG,"getExternalStoragePublicDirectory : "
-                + Environment.getExternalStoragePublicDirectory( Environment.DIRECTORY_PICTURES ).getAbsolutePath() );
 
         filePathImageCamera = new File( Environment
                 .getExternalStoragePublicDirectory( Environment.DIRECTORY_PICTURES ),
-                //nameFoto+"camera.jpg");
-                "Camera/"+nameFoto+".jpg");
-        Log.d(TAG,"filePathImageCamera " + filePathImageCamera);
+                nameFoto+"_camera.jpg");
+//
+//        ContentValues values = new ContentValues();
+//        values.put(MediaStore.Images.Media.TITLE, nameFoto+".jpg");
+//        cameraImageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);
 
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE );
         i.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(filePathImageCamera));
+        //i.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
         startActivityForResult(i, REQUEST_CAMERA_IMAGE );
     }
 
