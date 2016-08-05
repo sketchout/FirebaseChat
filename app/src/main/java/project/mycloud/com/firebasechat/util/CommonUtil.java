@@ -18,10 +18,6 @@ public class CommonUtil {
 
     private static final String TAG = CommonUtil.class.getSimpleName();
 
-    public static final String URL_STORAGE_REFERENCE = "gs://fir-chat-b753c.appspot.com";
-    public static final String FOLDER_STORAGE_IMG = "images";
-    public static final int MAX_IMAGE_WIDTH = 400;
-
     public static void initToast(Context c, String message) {
         Toast.makeText(c, message, Toast.LENGTH_SHORT).show();
     }
@@ -67,6 +63,43 @@ public class CommonUtil {
         Log.i(TAG, "BitmapSize : inSampleSize = " + inSampleSize );
 
         return inSampleSize;
+    }
+
+    /**
+     * http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
+     * by @@Tanmay Sahoo
+     *
+     * @param uri
+     * @return
+     */
+    public static byte[] getBytesFromImageUri(Context context, Uri uri) {
+        // TODO : get size of image
+        // http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        Bitmap bitmap=null;
+        options.inJustDecodeBounds = true;
+        try {
+            BitmapFactory.decodeStream(
+                    context.getContentResolver().openInputStream(uri),
+                    null, options);
+
+            options.inSampleSize = calculateInSampleSize(options,
+                    AppDefines.MAX_IMAGE_WIDTH, AppDefines.MAX_IMAGE_WIDTH );
+            options.inJustDecodeBounds = false;
+
+            bitmap = BitmapFactory.decodeStream(
+                    context.getContentResolver().openInputStream(uri),
+                    null, options );
+
+            Log.i(TAG, ">>>> image.getByteCount() : " + bitmap.getByteCount() );
+            Log.i(TAG, ">>>> image.getByteCount() K : " + bitmap.getByteCount() / 1024 );
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress( Bitmap.CompressFormat.JPEG, 100, baos );
+        return baos.toByteArray();
     }
 }
 

@@ -40,11 +40,8 @@ public class ChatFirebaseAdapter
                 R.layout.item_message_left,
                 MyChatViewHolder.class,
                 ref);
-
         this.nameUser = nameUser;
-
         this.mIClickListenerChatFirebase = mClickListerChatFirebase;
-
     }
 
     @Override
@@ -80,9 +77,7 @@ public class ChatFirebaseAdapter
     @Override
     public int getItemViewType(int position) {
         // return super.getItemViewType(position);
-
         ChatModel model = getItem(position);
-
         if ( model.getMapModel() != null ) {
             if (model.getUserModel().getName().equals(nameUser)) {
                 return RIGHT_MSG_IMG;
@@ -110,28 +105,21 @@ public class ChatFirebaseAdapter
         // photo -> imageview user
         Log.d(TAG,"populateViewHolder: getPhoto_profile() : " + model.getUserModel().getPhoto_profile() );
         viewHolder.setIvUser( model.getUserModel().getPhoto_profile() );
-
         Log.d(TAG,"populateViewHolder: model.getMessage() : " + model.getMessage() );
         viewHolder.setTxtMessage( model.getMessage() );
-
         Log.d(TAG,"populateViewHolder: model.getTimeStamp() : " + model.getTimeStamp() );
         viewHolder.setTvTimestamp( model.getTimeStamp() );
-
         viewHolder.tvIsLocation( View.GONE );
 
         if ( model.getFile() != null ) {
-
-            Log.d(TAG,"populateViewHolder: model.setIvChatPhoto() file : " + model.getFile().getUrl_file() );
-
+            Log.d(TAG,"populateViewHolder: model.setIvChatPhotWithUrl() file : " + model.getFile().getUrl_file() );
             viewHolder.tvIsLocation(View.GONE );
-            viewHolder.setIvChatPhoto( model.getFile().getUrl_file() );
+            viewHolder.setIvChatPhotWithUrl( model.getFile().getUrl_file() );
 
         } else if ( model.getMapModel() != null ) {
-
-            Log.d(TAG,"populateViewHolder: model.setIvChatPhoto() : Lat(" + model.getMapModel().getLatitude()
+            Log.d(TAG,"populateViewHolder: model.setIvChatPhotWithUrl() : Lat(" + model.getMapModel().getLatitude()
                         +") Long("+  model.getMapModel().getLongitude() +")" );
-
-            viewHolder.setIvChatPhoto(
+            viewHolder.setIvChatPhotWithUrl(
                     CommonUtil.local(model.getMapModel().getLatitude(),model.getMapModel().getLongitude() )  );
             viewHolder.tvIsLocation( View.VISIBLE );
         }
@@ -207,11 +195,10 @@ public class ChatFirebaseAdapter
 //        return ivChatPhoto;
 //    }
 
-        public void setIvChatPhoto(String url) {
+        public void setIvChatPhotWithUrl(String url) {
 
-            Log.d(TAG,"setIvChatPhoto " + url );
+            Log.d(TAG,"setIvChatPhotWithUrl " + url );
             if ( url == null ) return;
-
             //Glide.with(ivUser.getContext()).load("http://goo.gl/gEgYUd").into(ivUser);
             Glide.with( ivChatPhoto.getContext())
                     .load(url)

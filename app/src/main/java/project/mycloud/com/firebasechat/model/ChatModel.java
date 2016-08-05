@@ -5,10 +5,12 @@ package project.mycloud.com.firebasechat.model;
  */
 public class ChatModel {
 
+    //
     private String id;
-    private UserModel userModel;
     private String message;
     private String timeStamp;
+    // model
+    private UserModel userModel;
     private FileModel file;
     private MapModel mapModel;
 

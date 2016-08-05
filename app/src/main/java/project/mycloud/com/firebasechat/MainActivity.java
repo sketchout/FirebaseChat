@@ -1,13 +1,11 @@
 package project.mycloud.com.firebasechat;
 
-import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
-import android.os.PersistableBundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.os.Bundle;
@@ -32,11 +30,7 @@ import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -55,12 +49,15 @@ import project.mycloud.com.firebasechat.model.ChatModel;
 import project.mycloud.com.firebasechat.model.FileModel;
 import project.mycloud.com.firebasechat.model.MapModel;
 import project.mycloud.com.firebasechat.model.UserModel;
+import project.mycloud.com.firebasechat.util.AppDefines;
 import project.mycloud.com.firebasechat.util.CommonUtil;
+import project.mycloud.com.firebasechat.util.EndPoints;
 import project.mycloud.com.firebasechat.view.BaseActivity;
 import project.mycloud.com.firebasechat.view.FullScreenImageActivity;
 import project.mycloud.com.firebasechat.view.LoginActivity;
 
 import static project.mycloud.com.firebasechat.util.CommonUtil.calculateInSampleSize;
+import static project.mycloud.com.firebasechat.util.CommonUtil.getBytesFromImageUri;
 
 //
 // date : 25 July 2016
@@ -70,10 +67,6 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         View.OnClickListener, GoogleApiClient.OnConnectionFailedListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String CHAT_REFERENCE = "chatmodel";
-    private static final int REQUEST_CAMERA_IMAGE = 9001 ;
-    private static final int REQUEST_GALLERY_IMAGE = 9002;
-    private static final int REQUEST_PICKER_PLACE = 9003;
 
     // view
     private View linearlayoutMain;
@@ -85,17 +78,12 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
     private ImageView ivAttachButton;
 
     private LinearLayoutManager mLinearLayoutManager;
-    //firebase
-    private FirebaseAuth mFirebaseAuth;
-    private FirebaseUser mFirebaseUser;
-    private UserModel userModel;
+
     //
-    private DatabaseReference mFirebaseDatabaseReference;
-    FirebaseStorage storage = FirebaseStorage.getInstance();
+    private UserModel userModel;
     private File filePathImageCamera = null;
 
-    // google api
-    private GoogleApiClient mGoogleApiClient;
+
     //private Uri cameraImageUri;
 
     //
@@ -116,7 +104,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         } else {
             //CommonUtil.initToast(this, "findViews()!");
             findViews();
-            getFirebaseAuth();
+            checkAuthAndLoading();
 
             mGoogleApiClient = new GoogleApiClient.Builder(this).enableAutoManage(this,this)
                         .addApi(Auth.GOOGLE_SIGN_IN_API).build();
@@ -159,11 +147,11 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
     }
 
     public void getInfoAndUpload(Uri selectedImageUri) {
-        StorageReference firebaseStRef
-                = storage.getReferenceFromUrl(CommonUtil.URL_STORAGE_REFERENCE)
-                .child(CommonUtil.FOLDER_STORAGE_IMG);
+        StorageReference firebaseStRef = getFbStorageRef();
 
         showProgrssDialogMessage("Uploading...");
+
+        //
         final String name = DateFormat.format("yyyy-MM-dd_hhmmss", new Date()).toString();
         StorageReference firebaseStRefChild = firebaseStRef.child(name+"_gallery");
         upGalleryImage( firebaseStRefChild, selectedImageUri , name );
@@ -176,13 +164,11 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         // CommonUtil.URL_STORAGE_REFERENCE : "gs://fir-chat-b753c.appspot.com";
         // CommonUtil.FOLDER_STORAGE_IMG : "images"
 
-        StorageReference firebaseStRef
-                = storage.getReferenceFromUrl(CommonUtil.URL_STORAGE_REFERENCE)
-                        .child(CommonUtil.FOLDER_STORAGE_IMG);
+        StorageReference firebaseStRef = getFbStorageRef();
 
         // http://stackoverflow.com/questions/37557343/resize-an-image-before-uploading-it-to-firebase
 
-        if ( requestCode == REQUEST_CAMERA_IMAGE) {
+        if ( requestCode == AppDefines.REQUEST_CAMERA_IMAGE) {
             if ( resultCode == RESULT_OK ) {
 
                 Log.e(TAG, "onActivityResult.filePathImageCamera  :" + filePathImageCamera );
@@ -202,7 +188,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                 }
             }
         }
-        else if (requestCode == REQUEST_GALLERY_IMAGE ) {
+        else if (requestCode == AppDefines.REQUEST_GALLERY_IMAGE ) {
             if ( resultCode == RESULT_OK ) {
                 Uri selectedImageUri = returnIntent.getData();
                 if ( selectedImageUri != null ) {
@@ -214,12 +200,13 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                 }
             }
         }
-        else if ( requestCode == REQUEST_PICKER_PLACE ) {
+        else if ( requestCode == AppDefines.REQUEST_PICKER_PLACE ) {
             if ( resultCode == RESULT_OK ) {
                 Place place = PlacePicker.getPlace(this, returnIntent);
                 if ( place != null ) {
                     LatLng latLng = place.getLatLng();
                     MapModel mapModel = new MapModel( latLng.latitude+"", latLng.longitude+"");
+                    // +User -File -Message +Map
                     ChatModel chatModel = new ChatModel(userModel,
                                     Calendar.getInstance().getTime().getTime()+"", // timestamp
                                     mapModel);
@@ -242,7 +229,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         if (firebaseStRefChild != null) {
 
             // @@Tanmay Sahoo : get Byte from Image Uri
-            byte[] bytes = getBytesFromImageUri(uri);
+            byte[] bytes = getBytesFromImageUri(this, uri);
             UploadTask uploadTask = firebaseStRefChild.putBytes( bytes );
 
             // uploadTask = firebaseStRefChild.putFile(uri);
@@ -259,6 +246,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
 
                     Uri downloadUrl = taskSnapshot.getDownloadUrl();
                     FileModel fileModel = new FileModel("img", downloadUrl.toString(), name, "");
+                    // + User +File -Message -Map
                     ChatModel chatModel = new ChatModel(userModel,
                                     "",         // message
                                     Calendar.getInstance().getTime().getTime()+"", // timestamp
@@ -278,37 +266,29 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
      * @param file
      */
     private void upCameraImage(StorageReference firebaseStRefChild, final File file) {
-
         if ( firebaseStRefChild != null  ) {
-
-            //UploadTask uploadTask = firebaseStRefChild.putFile( Uri.fromFile(file) );
-
             // @@Tanmay Sahoo
-            byte[] bytes = getBytesFromImageUri(Uri.fromFile(file));
+            byte[] bytes = getBytesFromImageUri( this , Uri.fromFile(file));
             UploadTask uploadTask = firebaseStRefChild.putBytes( bytes );
-
             uploadTask.addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception e) {
-                    // hide Progress Dialog
-                    hideProgressDialog();
+                    hideProgressDialog(); // hide Progress Dialog
                     Log.e(TAG, "onFailure upCameraImage " + e.getMessage() );
                 }
             }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-
                     Uri downloadUrl = taskSnapshot.getDownloadUrl();
                     FileModel fileModel = new FileModel("img", downloadUrl.toString(),
                                     file.getName(), file.length()+"" );
+                    // + User +File -Message -Map
                     ChatModel chatModel = new ChatModel(userModel,
                                     "",     // message
                                     Calendar.getInstance().getTime().getTime()+"",  // timestamp
                                     fileModel );
-                    // save
-                    sendChatMessage(chatModel);
-                    // hide Progress Dialog
-                    hideProgressDialog();
+                    sendChatMessage(chatModel); // save
+                    hideProgressDialog(); // hide Progress Dialog
                     Log.i(TAG, "onSuccess upCameraImage");
                 }
             });
@@ -316,76 +296,64 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         }
     }
 
-    // http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
-    // @@Tanmay Sahoo
-    //
-    private byte[] getBytesFromImageUri(Uri uri) {
-        // TODO : get size of image
-        // http://stackoverflow.com/questions/2789276/android-get-real-path-by-uri-getpath
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        Bitmap bitmap=null;
-        options.inJustDecodeBounds = true;
-        try {
 
-            BitmapFactory.decodeStream(getContentResolver().openInputStream(uri), null, options);
-            options.inSampleSize = calculateInSampleSize(options,
-                    CommonUtil.MAX_IMAGE_WIDTH, CommonUtil.MAX_IMAGE_WIDTH );
-
-            options.inJustDecodeBounds = false;
-
-            bitmap = BitmapFactory.decodeStream( getContentResolver().openInputStream(uri),
-                    null, options );
-
-            Log.i(TAG, ">>>> image.getByteCount() : " + bitmap.getByteCount() );
-            Log.i(TAG, ">>>> image.getByteCount() K : " + bitmap.getByteCount() / 1024 );
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress( Bitmap.CompressFormat.JPEG, 100, baos );
-        return baos.toByteArray();
-    }
-
+    /**
+     *
+     * @param chatModel
+     */
     private void sendChatMessage(ChatModel chatModel) {
-        mFirebaseDatabaseReference.child(CHAT_REFERENCE).push().setValue(chatModel);
+        pushChat(EndPoints.CHAT_REFERENCE, chatModel);
     }
 
-    private void getFirebaseAuth() {
+    /**
+     * check Auth and loading Room
+     */
+    private void checkAuthAndLoading() {
 
-        mFirebaseAuth = FirebaseAuth.getInstance();
-        mFirebaseUser = mFirebaseAuth.getCurrentUser();
-        if ( mFirebaseUser == null ) {
-            Log.d(TAG,"getFirebaseAuth : mFirebaseAuth is null, start Loginactivity");
+        if ( getFbUser() == null ) {
+
+            Log.d(TAG,"checkAuthAndLoading : mFirebaseAuth is null, start Loginactivity");
+
             startActivity(new Intent(this, LoginActivity.class));
             finish();
+
         } else {
             showProgrssDialogMessage("Loading...");
-            Log.d(TAG,"getFirebaseAuth : getMessages()");
-            userModel = new UserModel(mFirebaseUser.getDisplayName(),
-                    mFirebaseUser.getPhotoUrl().toString(),mFirebaseUser.getUid() );
-            getMessages() ;
+
+            // get User Information
+            userModel = getUserModel();
+            // get Chat Messages
+            getMessages( EndPoints.CHAT_REFERENCE ) ;
+
+            Log.d(TAG,"checkAuthAndLoading : getMessages()");
         }
     }
 
-    private void getMessages() {
-        mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
+    private void getMessages(String childKey) {
 
-        final ChatFirebaseAdapter firebaseAdapter = new ChatFirebaseAdapter(
-                        mFirebaseDatabaseReference.child(CHAT_REFERENCE),
-                        userModel.getName(), this ) ;
+        final ChatFirebaseAdapter firebaseAdapter =
+                new ChatFirebaseAdapter(
+                        getFbDatabaseRef().child(childKey),
+                        userModel.getName(),
+                        this ) ;
 
-        firebaseAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+        firebaseAdapter.registerAdapterDataObserver(
+                new RecyclerView.AdapterDataObserver() {
             @Override
             public void onItemRangeInserted(int positionStart, int itemCount) {
+
                 super.onItemRangeInserted(positionStart, itemCount);
-                int friendMessagecount = firebaseAdapter.getItemCount();
-                int lastVisiblePosition = mLinearLayoutManager.findLastVisibleItemPosition();
+                int friendMessagecount
+                        = firebaseAdapter.getItemCount();
+                int lastVisiblePosition
+                        = mLinearLayoutManager.findLastVisibleItemPosition();
+
                 if ( lastVisiblePosition == -1 ||
                         (positionStart >= (friendMessagecount -1) &&
                             lastVisiblePosition ==(positionStart-1) ) ) {
+
                     messageRecyclerView.scrollToPosition(positionStart);
+
                 }
                 hideProgressDialog();
             }
@@ -429,7 +397,8 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
     public void clickImageMapChat(View view, int position, String latitude, String longitude) {
         // https://developers.google.com/maps/documentation/android-api/intents
         // z option : 0 (the whole world) ~ 21 ( individual buildings )
-        String uri = String.format("geo:%s,%s?z=19&q=%s,%s",latitude, longitude, latitude,longitude );
+        String uri = String.format("geo:%s,%s?z=19&q=%s,%s",
+                        latitude, longitude, latitude,longitude );
         Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(uri) );
         startActivity(i);
     }
@@ -472,6 +441,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         if ( inputMessage.isEmpty() ) return;
 
         editTextEmo.setText(null);
+        // + User -File +Message -Map
         ChatModel chatModel = new ChatModel( userModel,
                         inputMessage,           // message
                         Calendar.getInstance().getTime().getTime()+"",  // timstamp
@@ -488,7 +458,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
     private void pickerPlaceIntent() {
         try {
             PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-            startActivityForResult( builder.build(this), REQUEST_PICKER_PLACE);
+            startActivityForResult( builder.build(this), AppDefines.REQUEST_PICKER_PLACE);
         } catch (GooglePlayServicesRepairableException e) {
             e.printStackTrace();
         } catch (GooglePlayServicesNotAvailableException e) {
@@ -502,7 +472,7 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         i.setType("image/*");
         i.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(Intent.createChooser(i,getString(R.string.select_picture_title)),
-                REQUEST_GALLERY_IMAGE);
+                AppDefines.REQUEST_GALLERY_IMAGE);
     }
 
     private void cameraImageIntent() {
@@ -521,12 +491,16 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE );
         i.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(filePathImageCamera));
         //i.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
-        startActivityForResult(i, REQUEST_CAMERA_IMAGE );
+        startActivityForResult(i, AppDefines.REQUEST_CAMERA_IMAGE );
     }
 
     private void signOut() {
-        mFirebaseAuth.signOut();
+        // firebase
+        getFbAuth().signOut();
+        // google
         Auth.GoogleSignInApi.signOut(mGoogleApiClient);
+
+        // new Intent
         startActivity(new Intent(this,LoginActivity.class));
         finish();
     }
