@@ -51,12 +51,12 @@ import project.mycloud.com.firebasechat.view.BaseActivity;
 import project.mycloud.com.firebasechat.view.FullScreenImageActivity;
 import project.mycloud.com.firebasechat.view.LoginActivity;
 
-import static project.mycloud.com.firebasechat.util.CommonUtil.getBytesFromImageUri;
-
-//
-// date : 25 July 2016
-//
-
+/**
+ * MainActivity
+ *
+ * begin date : 25 July 2016
+ *
+ */
 public class MainActivity extends BaseActivity implements IClickListenerChatFirebase,
         View.OnClickListener, GoogleApiClient.OnConnectionFailedListener {
 
@@ -88,10 +88,6 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if ( savedInstanceState != null ) {
-            filePathImageCamera = new File ( savedInstanceState.getString("camera_filePath") );
-        }
-
         if ( !CommonUtil.verifyConnection(this)) {
             CommonUtil.initToast(this, "Please Check Internet Status!");
             finish();
@@ -102,18 +98,6 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
 
         }
     }
-
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-
-        // http://stackoverflow.com/questions/32339418/android-getting-uri-from-camera
-        if ( filePathImageCamera != null ) {
-            savedInstanceState.putString("camera_filePath",
-                    filePathImageCamera.toString());
-        }
-        super.onSaveInstanceState(savedInstanceState);
-    }
-
     @Override
     public void onClick(View view) {
         switch( view.getId() ) {
@@ -192,9 +176,10 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                     else {
                         Log.e(TAG, "onActivityResult.filePathImageCamera  :" + "Not Exist" );
                     }
-                } else {
-                    // IS NULL
                 }
+//                else {
+//                    // IS NULL
+//                }
             }
         }
         else if (requestCode == AppDefines.REQUEST_GALLERY_IMAGE ) {
@@ -202,9 +187,10 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                 Uri selectedImageUri = returnIntent.getData();
                 if ( selectedImageUri != null ) {
                     getGalleryImageAndUpload(selectedImageUri);
-                } else {
-                    Log.e(TAG, "selectedImageUri is null:" + selectedImageUri );
                 }
+//                else {
+//                    Log.e(TAG, "selectedImageUri is null:" + selectedImageUri );
+//                }
             }
         }
         else if ( requestCode == AppDefines.REQUEST_PICKER_PLACE ) {
@@ -212,9 +198,10 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                 Place place = PlacePicker.getPlace(this, returnIntent);
                 if ( place != null ) {
                     getMapAndUpload( place.getLatLng() );
-                } else {
-                    Log.e(TAG, "place is null:" + place );
                 }
+//                else {
+//                    Log.e(TAG, "place is null:" + place );
+//                }
             }
         }
     }
@@ -223,13 +210,13 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
 
     /**
      *
-     * @param firebaseStRefChild
-     * @param file
+     * @param firebaseStRefChild : firebase storage
+     * @param file :  saved
      */
     private void upCameraImage(StorageReference firebaseStRefChild, final File file) {
         if ( firebaseStRefChild != null  ) {
             // @@Tanmay Sahoo
-            byte[] bytes = getBytesFromImageUri( this , Uri.fromFile(file));
+            byte[] bytes = CommonUtil.getBytesFromImageUri( this , Uri.fromFile(file));
             UploadTask uploadTask = firebaseStRefChild.putBytes( bytes );
             uploadTask.addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -240,35 +227,40 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
             }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                 @Override
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                    FileModel fileModel = new FileModel("img", downloadUrl.toString(),
-                                    file.getName(), file.length()+"" );
+
+                    Log.i(TAG, "onSuccess upCameraImage");
+                    //Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                    FileModel fileModel =
+                                new FileModel("img",
+                                        taskSnapshot.getDownloadUrl().toString(),
+                                        file.getName(), file.length() + "");
+
                     // + User +File -Message -Map
                     ChatModel chatModel = new ChatModel(userModel,
-                                    "",     // message
-                                    Calendar.getInstance().getTime().getTime()+"",  // timestamp
-                                    fileModel );
+                            "",     // message
+                            Calendar.getInstance().getTime().getTime() + "",  // timestamp
+                            fileModel);
                     sendChatMessage(chatModel); // save
                     hideProgressDialog(); // hide Progress Dialog
-                    Log.i(TAG, "onSuccess upCameraImage");
                 }
             });
-        } else {
         }
+//        else {
+//        }
     }
 
     /**
      *
-     * @param firebaseStRefChild
-     * @param uri
-     * @param name
+     * @param firebaseStRefChild : firebase storage
+     * @param uri : resource
+     * @param name : name
      */
     private void upGalleryImage(StorageReference firebaseStRefChild, final Uri uri, final String name) {
 
         if (firebaseStRefChild != null) {
 
             // @@Tanmay Sahoo : get Byte from Image Uri
-            byte[] bytes = getBytesFromImageUri(this, uri);
+            byte[] bytes = CommonUtil.getBytesFromImageUri(this, uri);
             UploadTask uploadTask = firebaseStRefChild.putBytes( bytes );
 
             // uploadTask = firebaseStRefChild.putFile(uri);
@@ -283,8 +275,12 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                 @Override
                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
 
-                    Uri downloadUrl = taskSnapshot.getDownloadUrl();
-                    FileModel fileModel = new FileModel("img", downloadUrl.toString(), name, "");
+                    Log.i(TAG, "onSuccess upCameraImage");
+
+                    FileModel fileModel =
+                                new FileModel("img",
+                                        taskSnapshot.getDownloadUrl().toString(),
+                                        name, "");
                     // + User +File -Message -Map
                     ChatModel chatModel = new ChatModel(userModel,
                             "",         // message
@@ -293,16 +289,16 @@ public class MainActivity extends BaseActivity implements IClickListenerChatFire
                     sendChatMessage(chatModel);
                     // hide Progress Dialog
                     hideProgressDialog();
-                    Log.i(TAG, "onSuccess upCameraImage");
                 }
             });
-        } else {
         }
+//        else {
+//        }
     }
 
     /**
      *
-     * @param chatModel
+     * @param chatModel : chat model
      */
     private void sendChatMessage(ChatModel chatModel) {
         pushChat(EndPoints.CHAT_REFERENCE, chatModel);

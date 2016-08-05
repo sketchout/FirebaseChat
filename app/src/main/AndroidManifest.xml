@@ -14,7 +14,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/api_key_google_places" />
@@ -26,10 +25,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity android:name=".view.LoginActivity" />
-        <activity android:name=".view.FullScreenImageActivity"
-            android:theme="@style/AppThemeFullScreenImage"></activity>
+        <activity
+            android:name=".view.FullScreenImageActivity"
+            android:theme="@style/AppThemeFullScreenImage" />
     </application>
 
 </manifest>
